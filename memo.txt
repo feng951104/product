@@ -1,0 +1,161 @@
+一:服务器上安装rz上传文件指令sz下载文件指令：
+    1：下载三方工具(网址可以更换)    如果没安装wget命令，使用 yum install wget 安装wget命令。
+        wget http://www.ohse.de/uwe/releases/lrzsz-0.12.20.tar.gz
+    2:解压
+        tar zxvf lrzsz-0.12.20.tar.gz
+    3：进入解压后的目录:
+        cd lrzsz-0.12.20
+    4：配置安装路径，使用：   （若没安装gcc,则安装gcc：yum install gcc）
+        ./configure
+    5：进行编译和安装：
+        make && make install
+    6：进入lsz和lrz安装得目录下/usr/local/bin/
+        cd /usr/local/bin/
+    7:创建rz的软链接，并命名rz：
+        ln -s /usr/local/bin/lrz rz
+    8：创建sz的软链接，并命名sz:
+        ln -s /usr/local/bin/lsz sz
+    9：检测rz  sz
+        rz  sz
+
+
+
+二：服务器上部署JDK
+    1：下载jdk包   (或者上传)这里选择上传
+        rz    (选择本地得jdk包)
+    2：解压服务器上jdk压缩包
+        tar zxvf jdk-8u181-linux-x64.tar.gz
+    3:编辑配置文件
+        vim /etc/profile
+    4：添加如下内容
+        #set java environment
+        export JAVA_HOME=/usr/local/jdk1.8.0_181
+        export JRE_HOME=/usr/local/jdk1.8.0_181/jre
+        export CLASSPATH=.:$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
+        export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$JAVA_HOME:$PATH
+    5：保存
+        wq
+    6:执行生效
+        source /etc/profile
+    7：验证
+        javac    java -version
+
+
+三：服务器上安装部署zookeeper
+    1:上传zk得压缩包
+        rz
+    2:解压
+        tar zxvf zookeeper-3.4.10.tar
+    3:进入解压后得zookeeper文件夹下得 conf目录下
+        cd /usr/local/zookeeper-3.4.10/conf
+    4:修改zoo_sample.cfg  名称未zoo.cfg
+        mv zoo_sample.cfg zoo.cfg
+    5:修改zoo.cfg文件
+        vim zoo.cfg
+            dataDir=/usr/local/zookeeper-3.4.10/data
+            dataLogDir=/usr/local/zookeeper-3.4.10/logs
+    6：保存
+        wq
+    7:进入zookeeper 得bin目录下
+        cd /usr/local/zookeeper-3.4.10/bin
+    8：启动zookeeper
+        ./zkServer.sh start
+    9:查看zookeeper状态
+        ./zkServer.sh status       (ps -aux |grep zookeeper)
+    10:将zookeeper修改成为开机启动
+    进入到 /etc/rc.d/init.d 目录下
+        cd /etc/rc.d/init.d
+    11：新建一个名为 zookeeper 的文件
+        touch zookeeper
+    12：编辑zookeeper文件
+        vi zookeeper
+    插入以下：
+        #!/bin/bash
+        #chkconfig: 2345 10 90
+        #description: service zookeeper
+        export  JAVA_HOME=/usr/local/jdk1.8.0_181
+        export  ZOO_LOG_DIR=/usr/local/zookeeper-3.4.10/logs
+        ZOOKEEPER_HOME=/usr/local/zookeeper-3.4.10
+        su    root    ${ZOOKEEPER_HOME}/bin/zkServer.sh      "$1"
+    13：保存
+        wq
+    14:为新建的/etc/rc.d/init.d/zookeeper文件添加可执行权限
+        chmod  +x  /etc/rc.d/init.d/zookeeper
+    15:把zookeeper这个脚本添加到开机启动项里面
+        chkconfig  --add  zookeeper
+    16:重启linux
+        reboot
+
+
+
+四：服务器上部署redis 以及本地RDM连接远程redis
+    1：下载redis压缩包
+        wget http://download.redis.io/releases/redis-4.0.9.tar.gz
+    2:解压
+        tar xzf redis-4.0.9.tar.gz
+    3：进入解压得文件夹中redis-4.0.9中编译
+        cd redis-4.0.9
+        make
+    4:修改redis.conf 文件
+        vi redis.conf
+        daemonize  no  改为 daemonize yes
+        ##注释掉绑定的主机，否则客户端无法连接
+        bind 127.0.0.1 改为 #bind 127.0.0.1
+        protected-mode 设置为no
+    5:启动redis
+        在src目录下
+        ./redis-server ../redis.conf   带这个文件启动
+    6：本地RDM 测试
+
+
+
+五：服务器上部署mongodb
+    1：下载mongodb压缩包
+        wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.2.9.tgz
+    2：解压
+        tar zxvf mongodb-linux-x86_64-3.2.9.tgz
+    3：进入解压完成之后得文件夹mongodb 中
+        cd mongodb-linux-x86_64-3.2.9
+    创建数据文件夹和日志文件
+        mkdir -p  /usr/local/mongodb-linux-x86_64-3.2.9/data
+        touch /usr/local/mongodb-linux-x86_64-3.2.9/mongod.log
+        touch /usr/local/mongodb-linux-x86_64-3.2.9/mongodb.conf
+    4：编译mongodb.conf文件
+        dbpath=/usr/local/mongodb-linux-x86_64-3.2.9/data
+        logpath=/usr/local/mongodb-linux-x86_64-3.2.9/mongod.log
+        logappend = true
+        port = 27017
+        fork = true
+    5：启动mongodb
+        ./mongod --config /usr/local/mongodb-linux-x86_64-3.2.9/mongodb.conf
+
+    6:远程连接mongodb
+
+
+
+
+六：服务器上部署mysql
+    1:安装MySQL官方的Yum Repository
+        wget -i -c http://dev.mysql.com/get/mysql57-community-release-el7-10.noarch.rpm
+    2:下载rpm包
+        yum -y install mysql57-community-release-el7-10.noarch.rpm
+    3:安装MySQL服务
+        yum -y install mysql-community-server
+    4:启动mysql服务
+        systemctl start mysqld.service
+    5:查看mysql 的启动状态
+        service mysqld status
+    6:设置 mysql 开机自启
+        systemctl enable mysqld
+    7:刷新配置
+        systemctl daemon-reload
+    8:设置免密登录
+        vim /etc/my.cnf
+        在mysqld下面添加
+        skip-grant-tables
+        wq 保存
+    9：重启mysql服务
+
+
+
+
